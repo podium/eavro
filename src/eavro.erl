@@ -201,7 +201,7 @@ parse_types(Types, Context) ->
 		 Context :: type_context()) ->
 			{avro_type(), type_context() }.
 parse_type(Simple, Context) when is_binary(Simple) ->
-    Type = 
+    Type =
 	case Simple of
 	    <<"null">>    -> null;
 	    <<"boolean">> -> boolean;
@@ -232,6 +232,22 @@ parse_type([{_,_}|_] = Complex, Context) ->
 		fun parse_array/2;
 	    <<"fixed">> ->
 		fun parse_fixed/2;
+	    <<"null">>    ->
+		fun parse_primitive/2;
+	    <<"boolean">> ->
+		fun parse_primitive/2;
+	    <<"int">>     ->
+		fun parse_primitive/2;
+	    <<"long">>    ->
+		fun parse_primitive/2;
+	    <<"double">>  ->
+		fun parse_primitive/2;
+	    <<"string">>  ->
+		fun parse_primitive/2;
+	    <<"bytes">>   ->
+		fun parse_primitive/2;
+	    <<"float">>   ->
+		fun parse_primitive/2;
 	    BadType -> exit({bad_complex_type, BadType})
 	end,
     Parser(Complex, Context);
@@ -282,6 +298,10 @@ parse_union(Union,Context) ->
     check_uniqueness(Types),
     {Types, Context1}.
 
+parse_primitive(ComplexPrimitive, Context) ->
+	Type = proplists:get_value(<<"type">>, ComplexPrimitive),
+	parse_type(Type, Context).
+
 check_uniqueness(Types) ->
     L0 = [case T of
 	 #avro_record{ name = N } -> N;
@@ -294,8 +314,6 @@ check_uniqueness(Types) ->
 	 true -> ok 
       end|| {{T1, N1}, Idx1} <- L, {{T2,N2}, Idx2} <- L, Idx1 < Idx2],
     ok.
-	 
-	 
 
 parse_map(Map, Context) ->
     [ValuesType] = get_attributes(Map, [<<"values">>]),
